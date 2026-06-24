@@ -103,3 +103,17 @@ export function pickBestRuleForCard(
 
   return sorted[0];
 }
+
+// 從一組規則中，挑出適用於本次消費（商家/日期/支付方式）且最佳的規則。
+// 用於「確認交易 / 手動新增交易」時，依實際資料重新匹配規則（SDD 17.3）。
+export function matchBestRule(
+  rules: EngineRewardRule[],
+  merchant: EngineMerchant,
+  paymentMethod: string | null | undefined,
+  transactionDate: string,
+): EngineRewardRule | null {
+  const applicable = rules.filter((rule) =>
+    isRuleApplicable(rule, merchant, paymentMethod, transactionDate),
+  );
+  return pickBestRuleForCard(applicable, paymentMethod);
+}

@@ -157,7 +157,7 @@ export async function resolveMerchant(
 // 推薦（SDD 12 + 13.2）
 // ---------------------------------------------------------
 
-function toEngineRule(row: RewardRule): EngineRewardRule {
+export function toEngineRule(row: RewardRule): EngineRewardRule {
   return {
     id: row.id,
     cardId: row.card_id,
