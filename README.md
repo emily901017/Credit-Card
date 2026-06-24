@@ -6,7 +6,7 @@
 
 詳細設計見 [SDD.md](./SDD.md)。
 
-## 已完成範圍（SDD 第 22 章 Step 1–7）
+## 已完成範圍（SDD 第 22 章 Step 1–10）
 
 - **Step 1** 專案建置：Next.js + TS + Tailwind，安裝 `@supabase/supabase-js`、`@supabase/ssr`
 - **Step 2** 資料庫 Schema：`supabase/migrations/0001_init.sql`（10 張表 + RLS + policies）
@@ -15,9 +15,11 @@
 - **Step 5** 我的卡片：`/cards`（瀏覽、新增、停用/啟用持有卡）
 - **Step 6** 推薦引擎：`src/lib/reward-engine/`（商家解析、規則匹配、回饋計算、排序）+ 單元測試
 - **Step 7** 詢問頁：`/ask`（商家/金額/支付方式/日期輸入、顯示推薦結果、儲存推薦快照）
+- **Step 8** 待確認交易：`/ask` 追蹤/我已刷完、`/pending`（確認使用推薦卡或其他卡、修改金額、沒有交易）
+- **Step 9** 交易與回饋池：`/transactions`（手動新增、作廢）、`/reward-pools`（進度條儀表板），確認/作廢會重算回饋池（SDD 17.3/17.4）
+- **Step 10** PWA 與 UI 打磨：`manifest.json` + icons、底部導覽、loading / empty / error states
 
-> Step 8（待確認交易）、Step 9（交易與回饋池）、Step 10（PWA 打磨）尚未實作；
-> `/pending`、`/transactions`、`/reward-pools` 目前為佔位頁。
+至此完成 SDD 第 24 章的核心閉環：詢問 → 推薦 → 追蹤 → 確認 → 更新回饋池 → 下次推薦更準。
 
 ## 環境設定
 
