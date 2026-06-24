@@ -1,11 +1,16 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   createRecommendation,
   getRecommendation,
   resolveMerchant,
 } from "@/lib/db/queries";
+import {
+  createPendingTransaction,
+  createTransaction,
+} from "@/lib/db/transactions";
 import type { RecommendationResult } from "@/lib/reward-engine/types";
 
 export type RecommendActionResult =
@@ -84,4 +89,67 @@ export async function recommendAction(input: {
     merchantId: merchant.id,
     result,
   };
+}
+
+// 追蹤這筆（SDD 8.4）：建立 pending transaction，不影響回饋池（17.1）
+export async function trackPendingAction(input: {
+  merchantId: string;
+  recommendationId: string;
+  amount: number;
+  paymentMethod?: string | null;
+  userCardId: string;
+  rewardRuleId: string;
+  snapshot: RecommendationResult;
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "尚未登入" };
+
+  try {
+    await createPendingTransaction(supabase, user.id, {
+      merchantId: input.merchantId,
+      estimatedAmount: input.amount,
+      recommendedUserCardId: input.userCardId,
+      recommendedRewardRuleId: input.rewardRuleId,
+      paymentMethod: input.paymentMethod ?? null,
+      recommendationId: input.recommendationId,
+      recommendationSnapshot: input.snapshot,
+    });
+    revalidatePath("/pending");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "追蹤失敗" };
+  }
+}
+
+// 我已刷完（SDD 8.4）：直接建立 confirmed transaction 並更新回饋池
+export async function completeNowAction(input: {
+  merchantId: string;
+  amount: number;
+  paymentMethod?: string | null;
+  transactionDate: string;
+  userCardId: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "尚未登入" };
+
+  try {
+    await createTransaction(supabase, user.id, {
+      merchantId: input.merchantId,
+      userCardId: input.userCardId,
+      amount: input.amount,
+      paymentMethod: input.paymentMethod ?? null,
+      transactionDate: input.transactionDate,
+    });
+    revalidatePath("/transactions");
+    revalidatePath("/reward-pools");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "記錄失敗" };
+  }
 }
