@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import AppShell from "@/components/AppShell";
-import ComingSoon from "@/components/ComingSoon";
+import TransactionsManager from "@/components/TransactionsManager";
 import { createClient } from "@/lib/supabase/server";
+import { getMerchants, getUserCards } from "@/lib/db/queries";
+import { getTransactions } from "@/lib/db/transactions";
+
+export const dynamic = "force-dynamic";
 
 export default async function TransactionsPage() {
   const supabase = await createClient();
@@ -10,9 +14,20 @@ export default async function TransactionsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const [transactions, merchants, userCards] = await Promise.all([
+    getTransactions(supabase, user.id),
+    getMerchants(supabase),
+    getUserCards(supabase, user.id),
+  ]);
+  const activeCards = userCards.filter((uc) => uc.is_active !== false);
+
   return (
     <AppShell title="交易紀錄">
-      <ComingSoon step="Step 9（交易與回饋池）" />
+      <TransactionsManager
+        transactions={transactions}
+        merchants={merchants}
+        userCards={activeCards}
+      />
     </AppShell>
   );
 }
